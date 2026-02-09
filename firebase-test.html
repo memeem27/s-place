@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Firebase Connection Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; margin-top: 0; }
+    h3 { color: #666; }
+    button {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover { background: #357ae8; }
+    button:active { transform: scale(0.98); }
+    #output {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #4285f4;
+      min-height: 100px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .success { color: #0f9d58; }
+    .error { color: #db4437; }
+    .warning { color: #f4b400; }
+    .info { color: #4285f4; }
+    .code {
+      background: #263238;
+      color: #aed581;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    p { line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔥 Firebase Connection Test</h1>
+    <p>Use this page to verify your Firebase Realtime Database is configured correctly.</p>
+    
+    <h3>Step 1: Firebase Config is Already Set</h3>
+    <p>Your Firebase configuration is already loaded from your project.</p>
+    
+    <h3>Step 2: Run Tests</h3>
+    <button onclick="runAllTests()">🚀 Run All Tests</button>
+    <button onclick="testWrite()">📝 Test Write</button>
+    <button onclick="testRead()">📖 Test Read</button>
+    <button onclick="clearOutput()">🗑️ Clear Output</button>
+    
+    <div id="output">
+      <p class="info">Click "Run All Tests" to begin...</p>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <script>
+    // ====================================================================
+    // FIREBASE CONFIGURATION
+    // ====================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyD6KM7s1q8WipzjTHbqqA5MCFSMNo9ApVg",
+      authDomain: "fir-place-3b4ad.firebaseapp.com",
+      databaseURL: "https://fir-place-3b4ad-default-rtdb.firebaseio.com",
+      projectId: "fir-place-3b4ad",
+      storageBucket: "fir-place-3b4ad.firebasestorage.app",
+      messagingSenderId: "209625972319",
+      appId: "1:209625972319:web:9e26c359fb14f1c51ea5ea",
+      measurementId: "G-8V7KFR53TW"
+    };
+    // ====================================================================
+
+    const output = document.getElementById('output');
+    let db;
+
+    function log(message, type = 'info') {
+      const p = document.createElement('p');
+      p.className = type;
+      p.innerHTML = message;
+      output.appendChild(p);
+      console.log(message.replace(/<[^>]*>/g, ''));
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function clearOutput() {
+      output.innerHTML = '';
+    }
+
+    async function runAllTests() {
+      clearOutput();
+      log('<strong>🔍 Starting Firebase Tests...</strong>', 'info');
+      log('═══════════════════════════════════', 'info');
+      
+      await testConfig();
+      await testSDKLoaded();
+      await testInitialization();
+      await testConnection();
+      await testWrite();
+      await testRead();
+      await testRealtime();
+      
+      log('═══════════════════════════════════', 'info');
+      log('<strong>✅ All tests complete!</strong>', 'success');
+    }
+
+    async function testConfig() {
+      log('<br><strong>Test 1: Configuration Check</strong>', 'info');
+      
+      if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
+        log('❌ FAILED: You need to replace the Firebase config!', 'error');
+        log('Open this HTML file and paste your Firebase config from the console', 'error');
+        return false;
+      }
+      
+      log('✅ Config has been customized', 'success');
+      log(`Project ID: ${firebaseConfig.projectId}`, 'info');
+      log(`Database URL: ${firebaseConfig.databaseURL}`, 'info');
+      return true;
+    }
+
+    async function testSDKLoaded() {
+      log('<br><strong>Test 2: Firebase SDK</strong>', 'info');
+      
+      if (typeof firebase === 'undefined') {
+        log('❌ FAILED: Firebase SDK not loaded', 'error');
+        log('Check your internet connection and try again', 'error');
+        return false;
+      }
+      
+      log(`✅ Firebase SDK loaded (version ${firebase.SDK_VERSION})`, 'success');
+      return true;
+    }
+
+    async function testInitialization() {
+      log('<br><strong>Test 3: Firebase Initialization</strong>', 'info');
+      
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.database();
+        log('✅ Firebase initialized successfully', 'success');
+        return true;
+      } catch (error) {
+        log(`❌ FAILED: ${error.message}`, 'error');
+        log('Double-check your Firebase config values', 'error');
+        return false;
+      }
+    }
+
+    async function testConnection() {
+      log('<br><strong>Test 4: Database Connection</strong>', 'info');
+      
+      return new Promise((resolve) => {
+        const connectedRef = db.ref('.info/connected');
+        connectedRef.once('value', (snap) => {
+          if (snap.val() === true) {
+            log('✅ Connected to Firebase Realtime Database', 'success');
+            resolve(true);
+          } else {
+            log('❌ Not connected to Firebase', 'error');
+            resolve(false);
+          }
+        });
+        
+        setTimeout(() => {
+          log('⚠️ Connection test timed out', 'warning');
+          resolve(false);
+        }, 5000);
+      });
+    }
+
+    async function testWrite() {
+      log('<br><strong>Test 5: Write Test</strong>', 'info');
+      
+      if (!db) {
+        log('❌ Database not initialized', 'error');
+        return false;
+      }
+      
+      try {
+        const testValue = Math.floor(Math.random() * 1000);
+        await db.ref('test/writeTest').set(testValue);
+        log(`✅ Successfully wrote value: ${testValue}`, 'success');
+        return true;
+      } catch (error) {
+        log(`❌ FAILED: ${error.message}`, 'error');
+        
+        if (error.code === 'PERMISSION_DENIED') {
+          log('⚠️ Permission denied! Update your database security rules:', 'warning');
+          log('<div class="code">' +
+              '{\n' +
+              '  "rules": {\n' +
+              '    "projects": {\n' +
+              '      "$projectId": {\n' +
+              '        "variables": {\n' +
+              '          ".read": true,\n' +
+              '          ".write": true\n' +
+              '        }\n' +
+              '      }\n' +
+              '    },\n' +
+              '    "test": {\n' +
+              '      ".read": true,\n' +
+              '      ".write": true\n' +
+              '    }\n' +
+              '  }\n' +
+              '}' +
+              '</div>', 'warning');
+          log('Go to Firebase Console → Realtime Database → Rules', 'warning');
+        }
+        
+        return false;
+      }
+    }
+
+    async function testRead() {
+      log('<br><strong>Test 6: Read Test</strong>', 'info');
+      
+      if (!db) {
+        log('❌ Database not initialized', 'error');
+        return false;
+      }
+      
+      try {
+        const snapshot = await db.ref('test/writeTest').once('value');
+        const value = snapshot.val();
+        
+        if (value !== null) {
+          log(`✅ Successfully read value: ${value}`, 'success');
+          return true;
+        } else {
+          log('⚠️ No data found (this is OK if it\'s your first test)', 'warning');
+          return true;
+        }
+      } catch (error) {
+        log(`❌ FAILED: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testRealtime() {
+      log('<br><strong>Test 7: Real-time Updates</strong>', 'info');
+      
+      if (!db) {
+        log('❌ Database not initialized', 'error');
+        return false;
+      }
+      
+      return new Promise((resolve) => {
+        const testRef = db.ref('test/realtimeTest');
+        let updateCount = 0;
+        
+        const listener = testRef.on('value', (snapshot) => {
+          updateCount++;
+          log(`📡 Received update #${updateCount}: ${snapshot.val()}`, 'info');
+        });
+        
+        setTimeout(() => {
+          testRef.set(Date.now());
+        }, 500);
+        
+        setTimeout(() => {
+          testRef.off('value', listener);
+          if (updateCount >= 2) {
+            log('✅ Real-time updates working!', 'success');
+            resolve(true);
+          } else {
+            log('⚠️ Real-time updates may not be working properly', 'warning');
+            resolve(false);
+          }
+        }, 2000);
+      });
+    }
+
+    window.addEventListener('load', () => {
+      log('Page loaded. Ready to test!', 'info');
+      log('Click "Run All Tests" to begin...', 'info');
+    });
+  </script>
+</body>
+</html>
